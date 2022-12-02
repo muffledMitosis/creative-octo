@@ -150,7 +150,7 @@ function NewRequestFlow() {
 
         <div className="w-full flex flex-row justify-end mt-4">
           <div className="inline">
-            <label className="m-4 bg-octo-dark-purple text-octo-yellow px-4 rounded-lg font-bold cursor-pointer">
+            <label className="bg-gradient-to-r from-octo-dark-purple to to-octo-light-purple m-4 text-octo-yellow px-4 rounded-lg font-bold cursor-pointer">
               Submit Request & Connect With A Project Manager
               <input type="submit" value="" />
 
@@ -263,7 +263,7 @@ export default function Home() {
         // </div>
       }
       <div onClick={() => { setAddNew(true) }}
-        className="cursor-pointer bg-octo-dark-purple text-octo-yellow rounded-full p-4 py-1 inline-block ml-10 mt-4">
+        className="bg-gradient-to-r from-octo-dark-purple to-octo-light-purple cursor-pointer text-octo-yellow rounded-full p-4 py-1 inline-block ml-10 mt-4">
         New Request
       </div>
       {addNew ? <NewRequestFlow /> : <ProjectTable />}
