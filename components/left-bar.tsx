@@ -1,6 +1,6 @@
 function SectionBtn({ text, selected = false }) {
   return (
-    <div className={(selected ? "bg-octo-dark-purple text-white " : "bg-octo-yellow text-black ") + " rounded-lg px-16 py-3 font-bold text-center"}>
+    <div className={(selected ? "bg-octo-dark-purple text-white " : "bg-octo-yellow text-black ") + " cursor-pointer rounded-lg px-16 py-3 font-bold text-center"}>
       {text}
     </div>
   );

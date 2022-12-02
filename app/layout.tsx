@@ -15,7 +15,7 @@ export default function RootLayout({
       <head />
       <body className="bg-octo-light-yellow">
         <div className="w-full flex flex-row items-center content-center justify-center">
-          <div className="w-3/4 flex flex-row border border-red-700 gap-4 p-4">
+          <div className="w-3/4 flex flex-row gap-4 p-4">
             <LeftBar />
             <div className="w-full">
               {children}

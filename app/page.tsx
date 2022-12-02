@@ -1,21 +1,45 @@
 'use client';
-import { collection, setDoc, addDoc } from 'firebase/firestore';
+import { collection, setDoc, addDoc, getDocs } from 'firebase/firestore';
+import { uploadBytesResumable, ref } from 'firebase/storage';
 import { useState } from 'react';
 import { useForm } from "react-hook-form";
-import { doc, getDoc, db } from '../components/firebase';
+import { doc, getDoc, db, storage } from '../components/firebase';
 
 
 
 function NewRequestFlow() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
+
+  const [isUploading, setIsUploading] = useState(false);
+
   const onSubmit = data => {
+    setIsUploading(true);
     const requestsRef = collection(db, 'requests');
 
     console.log(data);
-    let data_temp = data;
+    let data_temp = structuredClone(data);
     data_temp["attachment"] = "none";
+    data_temp["inProgress"] = true;
 
-    addDoc(requestsRef, data_temp).then(e => console.log("UPLOAD COMPLETE"));
+    console.log(data_temp);
+
+    addDoc(requestsRef, data_temp).then(e => {
+      // do the whole file upload and then reload the page
+      const storageRef = ref(storage, `/files/${data["attachment"][0].name}`);
+      console.log(data["attachment"][0]);
+      const uploadTask = uploadBytesResumable(storageRef, data["attachment"][0]);
+
+      uploadTask.on("state_changed", snapshot => {
+        // if (snapshot.state == 'success') {
+        //   // location.reload();
+        //   console.log("complete uplad");
+        // }
+        const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        if (percent == 100) {
+          location.reload();
+        }
+      });
+    });
   };
 
   const platform_checks = [
@@ -47,8 +71,16 @@ function NewRequestFlow() {
     );
   }
 
-  return (
-    <div className="p-4 bg-white m-10 rounded-lg ">
+  function LoadingProgress() {
+    return (
+      <div>
+        Uploading Content...
+      </div>
+    );
+  }
+
+  function TheForm() {
+    return (
       <form onSubmit={handleSubmit(onSubmit)}>
         <label className="">
           <br /><div className="font-bold">Task Name</div>
@@ -68,7 +100,7 @@ function NewRequestFlow() {
         <label className="">
           <br /><div className="font-bold mt-4">Size (Width & Height)</div>
           <input className="bg-gray-200 px-2 py1 mb-4 w-full"
-            {...register("taskName")} /><br />
+            {...register("contentSize")} /><br />
         </label>
 
         <label>
@@ -133,28 +165,56 @@ function NewRequestFlow() {
         </div>
 
       </form>
+    );
+  }
+
+  return (
+    <div className="p-4 bg-white m-10 rounded-lg ">
+      {isUploading ? <LoadingProgress /> : <TheForm />}
     </div>
   );
 }
 
 function ProjectTable() {
   const [loading, setLoading] = useState(true);
+  const [docs, setDocs] = useState(false);
+
+  if (!docs) {
+    getDocs(collection(db, 'requests')).then(qs => {
+      let temp_docs_arr = [];
+      qs.forEach(doc => {
+        temp_docs_arr.push(doc.data());
+      });
+      setDocs(temp_docs_arr);
+      setLoading(false);
+    });
+  }
 
   function TableItem({ task, status, dueOn }) {
+    let color = (status == "In Progress") ? "text-orange-700" : "text-green-500";
+
     return (
-      <tr className="bg-gray-200">
-        <td>{task}</td>
-        <td>{status}</td>
+      <tr className="bg-gray-200 ml-2">
+        <td><div className="ml-2">{task}</div></td>
+        <td><div className={color}>{status}</div></td>
         <td>{dueOn}</td>
       </tr>
     );
   }
 
+  function RequestsTable() {
 
-  return (
-    <div className="p-4 bg-white m-10 rounded-lg ">
-      <div className="">Active Graphic Design Requests</div>
-      <table className="table-auto w-full border border-red-700 border-separate border-spacing-y-3">
+    let row_arr = docs.map(doc => {
+      let progress_text = doc["inProgress"] ? "In Progress" : "Complete";
+
+      let elem = <TableItem task={doc["taskName"]} status={progress_text} dueOn="2022/12/12" />;
+
+      return elem;
+    });
+
+
+    return (
+      <table className="table-auto w-full border-separate border-spacing-y-3">
         <colgroup>
           <col className="w-2/4" />
           <col className="w-1/4" />
@@ -169,13 +229,26 @@ function ProjectTable() {
         </thead>
 
         <tbody>
-          <TableItem task="test task" status="complete" dueOn="2022/20/05" />
-          <TableItem task="test task" status="complete" dueOn="2022/20/05" />
-          <TableItem task="test task" status="complete" dueOn="2022/20/05" />
-          <TableItem task="test task" status="complete" dueOn="2022/20/05" />
+          {row_arr}
         </tbody>
 
       </table>
+    );
+  }
+
+  function LoadingIndicator() {
+    return (
+      <div>
+        Loading....
+      </div>
+    );
+  }
+
+
+  return (
+    <div className="p-4 bg-white m-10 rounded-lg ">
+      <div className="">Active Graphic Design Requests</div>
+      {loading ? <LoadingIndicator /> : <RequestsTable />}
     </div>
   );
 }
@@ -194,10 +267,10 @@ export default function Home() {
         // </div>
       }
       <div onClick={() => { setAddNew(true) }}
-        className="bg-octo-dark-purple text-octo-yellow rounded-full p-4 py-1 inline-block ml-10">
+        className="cursor-pointer bg-octo-dark-purple text-octo-yellow rounded-full p-4 py-1 inline-block ml-10 mt-4">
         New Request
       </div>
-      {addNew ? NewRequestFlow() : ProjectTable()}
+      {addNew ? <NewRequestFlow /> : <ProjectTable />}
     </div>
   );
 }
