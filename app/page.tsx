@@ -30,10 +30,6 @@ function NewRequestFlow() {
       const uploadTask = uploadBytesResumable(storageRef, data["attachment"][0]);
 
       uploadTask.on("state_changed", snapshot => {
-        // if (snapshot.state == 'success') {
-        //   // location.reload();
-        //   console.log("complete uplad");
-        // }
         const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
         if (percent == 100) {
           location.reload();
